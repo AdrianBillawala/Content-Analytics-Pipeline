@@ -1,21 +1,17 @@
 import pandas as pd
-"""
-transform_channel_details()
-transform_video_comments()
-transform_channel_comments()
-"""
+
 def transform_channel_comments(channel_comments):
     transformed = []
-    #flatten channel comments into a dictionary for easier analysis/saving to CSV
-    for channel_id, comments in channel_comments.items():
-        for comment in comments:
-            comment_id = comment['id']
-            author_display_name = comment['snippet']['topLevelComment']['snippet']['authorDisplayName']
-            author_channel_id = comment['snippet']['topLevelComment']['snippet']['authorChannelId']['value']
-            text_display = comment['snippet']['topLevelComment']['snippet']['textDisplay']
-            like_count = comment['snippet']['topLevelComment']['snippet']['likeCount']
-            published_at = comment['snippet']['topLevelComment']['snippet']['publishedAt']
-            transformed.append((channel_id, comment_id, author_display_name, author_channel_id, text_display, like_count, published_at))
+    #flatten channel comments into a dictionary for easier analysis/saving to CSv
+    for comment in channel_comments:
+        channel_id = comment['snippet']['channelId']
+        comment_id = comment['id']
+        author_display_name = comment['snippet']['topLevelComment']['snippet']['authorDisplayName']
+        author_channel_id = comment['snippet']['topLevelComment']['snippet'].get('authorChannelId', {}).get('value')
+        text_display = comment['snippet']['topLevelComment']['snippet']['textDisplay']
+        like_count = comment['snippet']['topLevelComment']['snippet']['likeCount']
+        published_at = comment['snippet']['topLevelComment']['snippet']['publishedAt']
+        transformed.append((channel_id, comment_id, author_display_name, author_channel_id, text_display, like_count, published_at))
     
     # Create a DataFrame from the transformed list of tuples
     df = pd.DataFrame(transformed, columns=['channel_id', 'comment_id', 'author_display_name', 'author_channel_id', 'text_display', 'like_count', 'published_at'])
@@ -26,15 +22,15 @@ def transform_channel_comments(channel_comments):
 def transform_video_comments(video_comments):
     transformed = []
     #flatten video comments into a dictionary for easier analysis/saving to CSV
-    for video_id, comments in video_comments.items():
-        for comment in comments:
-            comment_id = comment['id']
-            author_display_name = comment['snippet']['topLevelComment']['snippet']['authorDisplayName']
-            author_channel_id = comment['snippet']['topLevelComment']['snippet']['authorChannelId']['value']
-            text_display = comment['snippet']['topLevelComment']['snippet']['textDisplay']
-            like_count = comment['snippet']['topLevelComment']['snippet']['likeCount']
-            published_at = comment['snippet']['topLevelComment']['snippet']['publishedAt']
-            transformed.append((video_id, comment_id, author_display_name, author_channel_id, text_display, like_count, published_at))
+    for comment in video_comments:
+        video_id = comment['snippet']['videoId']
+        comment_id = comment['id']
+        author_display_name = comment['snippet']['topLevelComment']['snippet']['authorDisplayName']
+        author_channel_id = (comment['snippet']['topLevelComment']['snippet'].get('authorChannelId', {}).get('value'))
+        text_display = comment['snippet']['topLevelComment']['snippet']['textDisplay']
+        like_count = comment['snippet']['topLevelComment']['snippet']['likeCount']
+        published_at = comment['snippet']['topLevelComment']['snippet']['publishedAt']
+        transformed.append((video_id, comment_id, author_display_name, author_channel_id, text_display, like_count, published_at))
 
     # Create a DataFrame from the transformed list of tuples
     df = pd.DataFrame(transformed, columns=['video_id', 'comment_id', 'author_display_name', 'author_channel_id', 'text_display', 'like_count', 'published_at'])
@@ -60,7 +56,7 @@ def transform_channel_details(channel_details):
 def transform_video_details(video_details):
   # Check if video_details is empty or None
     if not video_details:
-      return None
+      return pd.DataFrame()
     
     transformed = []
     #flatten video details into a dictionary for easier analysis/saving to CSV
@@ -86,8 +82,9 @@ def transform_video_details(video_details):
 
 def transform_search_results(search_results):
     transformed = []
-    # flatten search results into a DataFrame for easier analysis/saving to CSV
+    
     for item in search_results:
+        # flatten search results into a DataFrame for easier analysis/saving to CSV
         video_id = item['id'].get('videoId')
         channel_id = item['snippet'].get('channelId')
         title = item['snippet'].get('title')
@@ -95,6 +92,8 @@ def transform_search_results(search_results):
         published_at = item['snippet'].get('publishedAt')
         channel_title = item['snippet'].get('channelTitle')
         transformed.append((channel_id, channel_title, video_id, title, description, published_at))
+
+        
     
     # Create a DataFrame from the transformed list of tuples
     df = pd.DataFrame(transformed, columns=['channel_id', 'channel_title', 'video_id', 'title', 'description', 'published_at'])
