@@ -1,10 +1,11 @@
 from googleapiclient.discovery import build
-
+"""----------------------------------------------------------------------------------------------------------------------------------------------------"""
 # Build and return Youtube API client
 def build_youtube_client(api_key):
     api_client = build('youtube', 'v3', developerKey=api_key)
     return api_client
 
+"""----------------------------------------------------------------------------------------------------------------------------------------------------"""
 # Search for default = videos based on a query and return the results
 def search_query(youtube, query, part="snippet", max_results=50, order="viewCount", resource_type="video"):
     page_counter = 0
@@ -30,6 +31,7 @@ def search_query(youtube, query, part="snippet", max_results=50, order="viewCoun
 
     return all_items
 
+"""----------------------------------------------------------------------------------------------------------------------------------------------------"""
 # batched call for video details to handle video ID lists longer than 50 (API limit)
 def get_video_details(youtube, video_ids):
     if isinstance(video_ids, str):
@@ -46,6 +48,7 @@ def get_video_details(youtube, video_ids):
 
     return all_video_details
 
+"""----------------------------------------------------------------------------------------------------------------------------------------------------"""
 # batched call for channel details to handle channel ID lists longer than 50 (API limit)
 def get_channel_details(youtube, channel_ids):
     if isinstance(channel_ids, str):
@@ -62,7 +65,7 @@ def get_channel_details(youtube, channel_ids):
 
     return all_channel_details
 
-
+"""----------------------------------------------------------------------------------------------------------------------------------------------------"""
 # Get video top level comments for a list of video IDs
 def get_video_comments(youtube, video_ids, max_results=100):
 
@@ -96,6 +99,7 @@ def get_video_comments(youtube, video_ids, max_results=100):
 
     return all_raw_items # Return the full bucket AFTER the loop
 
+"""----------------------------------------------------------------------------------------------------------------------------------------------------"""
 # Get comment threads related to a channel
 def get_channel_comments(youtube, channel_id, max_results=100):
     all_raw_items = []  # This will hold all comments for the channel

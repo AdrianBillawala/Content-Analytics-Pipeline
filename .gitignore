@@ -7,3 +7,9 @@ __pycache__/
 
 # Ignore environment variables (API Keys)
 .env
+
+# Ignore Jupyter Notebook files
+*.ipynb
+.ipynb_checkpoints/
+anaconda_projects/
+
