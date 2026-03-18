@@ -1,5 +1,6 @@
 import pandas as pd
 import isodate
+
 """----------------------------------------------------------------------------------------------------------------------------------------------------"""
 def transform_channel_comments(channel_comments):
     transformed = []
@@ -101,6 +102,7 @@ def transform_video_details(video_details):
             return pd.NA
 
     df['duration_seconds'] = df['duration'].apply(_duration_to_seconds)
+    df['duration_seconds'] = pd.to_numeric(df['duration_seconds'], errors='coerce')
     df = df.drop(columns=['duration'])
 
     #drop duplicates after running through the loop to ensure we only have unique video/channel combinations in the final DataFrame, then reset index to clean up after dropping duplicates
@@ -130,40 +132,80 @@ def transform_video_details(video_details):
     return df
 
 """----------------------------------------------------------------------------------------------------------------------------------------------------"""
+
 def transform_search_results(search_results):
     transformed = []
-    
+
+    if not search_results:
+        return pd.DataFrame()
+
+    # ✅ detect once
+    first_kind = search_results[0].get('id', {}).get('kind')
+
+    if first_kind == 'youtube#video':
+        search_type = 'video'
+    elif first_kind == 'youtube#channel':
+        search_type = 'channel'
+    else:
+        return pd.DataFrame()
+
     for item in search_results:
-        # flatten search results into a DataFrame for easier analysis/saving to CSV
         snippet = item.get('snippet', {})
         item_id = item.get('id', {})
+        kind = item_id.get('kind')
 
-        video_id = item_id.get('videoId')
-        channel_id = snippet.get('channelId')
-        video_title = snippet.get('title')
-        description = snippet.get('description')
-        published_date = snippet.get('publishedAt')
-        channel_title = snippet.get('channelTitle')
-        transformed.append((channel_id, channel_title, video_id, video_title, description, published_date))
-    
-    # Create a DataFrame from the transformed list of tuples
-    df = pd.DataFrame(transformed, columns=['channel_id', 'channel_title', 'video_id', 'video_title', 'description', 'published_date'])
-    
-    #drop duplicates after running through the loop to ensure we only have unique video/channel combinations in the final DataFrame
-    df = df.drop_duplicates(subset=['video_id'])
+        # enforce consistency
+        if search_type == 'video' and kind != 'youtube#video':
+            continue
+        if search_type == 'channel' and kind != 'youtube#channel':
+            continue
 
-    # Convert published_date to datetime format and sort by published_date in descending order to have the most recent videos at the top, then reset index to clean up after dropping duplicates
-    df['published_date'] = pd.to_datetime(df['published_date'], utc=True)
+        if search_type == 'video':
+            transformed.append((
+                snippet.get('channelId'),
+                snippet.get('channelTitle'),
+                item_id.get('videoId'),
+                snippet.get('title'),
+                snippet.get('description'),
+                snippet.get('publishedAt')
+            ))
 
-    # Strip leading and trailing whitespace from string columns
-    df['video_title'] = df['video_title'].str.strip()
-    df['description'] = df['description'].str.strip()
-    df['channel_title'] = df['channel_title'].str.strip()
+        else:  # channel
+            transformed.append((
+                item_id.get('channelId'),
+                snippet.get('title'),
+                snippet.get('description'),
+                snippet.get('publishedAt')
+            ))
 
-    #reset index to clean up after dropping duplicates and sorting
-    df = df.reset_index(drop=True)
+    # -------------------------
+    # Build DataFrame
+    # -------------------------
+    if search_type == 'video':
+        df = pd.DataFrame(transformed, columns=[
+            'channel_id', 'channel_title', 'video_id',
+            'video_title', 'description', 'published_date'
+        ])
+        df = df.drop_duplicates(subset=['video_id'])
+        string_cols = ['channel_title', 'video_title', 'description']
 
+    else:
+        df = pd.DataFrame(transformed, columns=[
+            'channel_id', 'channel_title', 'description', 'published_date'
+        ])
+        df = df.drop_duplicates(subset=['channel_id'])
+        string_cols = ['channel_title', 'description']
 
-    return df
+    if df.empty:
+        return df
+
+    # Convert published_date to datetime, coercing errors to NaT (Not a Time) for invalid formats
+    df['published_date'] = pd.to_datetime(df['published_date'], utc=True, errors='coerce')
+
+    # Strip leading and trailing whitespace from string columns, filling NaN with empty strings first to avoid errors.
+    for col in string_cols:
+        df[col] = df[col].fillna('').str.strip()
+
+    return df.reset_index(drop=True)
 
 
