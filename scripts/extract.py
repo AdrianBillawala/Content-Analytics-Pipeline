@@ -7,7 +7,7 @@ def build_youtube_client(api_key):
 
 """----------------------------------------------------------------------------------------------------------------------------------------------------"""
 # Search for default = videos based on a query and return the results
-def search_query(youtube, query, part="snippet", max_results=50, order="viewCount", resource_type="video"):
+def youtube_search_query(youtube, query, part="snippet", max_results=50, order="viewCount", resource_type="video"):
     page_counter = 0
     max_pages = 4  # Limit to 4 pages of results (200 videos) to avoid hitting API limits
     all_items = []
@@ -33,7 +33,7 @@ def search_query(youtube, query, part="snippet", max_results=50, order="viewCoun
 
 """----------------------------------------------------------------------------------------------------------------------------------------------------"""
 # batched call for video details to handle video ID lists longer than 50 (API limit)
-def get_video_details(youtube, video_ids):
+def get_youtube_video_details(youtube, video_ids):
     if isinstance(video_ids, str):
         video_ids = [video_ids]
 
@@ -50,7 +50,7 @@ def get_video_details(youtube, video_ids):
 
 """----------------------------------------------------------------------------------------------------------------------------------------------------"""
 # batched call for channel details to handle channel ID lists longer than 50 (API limit)
-def get_channel_details(youtube, channel_ids):
+def get_youtube_channel_details(youtube, channel_ids):
     if isinstance(channel_ids, str):
         channel_ids = [channel_ids]
 
@@ -67,7 +67,7 @@ def get_channel_details(youtube, channel_ids):
 
 """----------------------------------------------------------------------------------------------------------------------------------------------------"""
 # Get video top level comments for a list of video IDs
-def get_video_comments(youtube, video_ids, max_results=100):
+def get_youtube_video_comments(youtube, video_ids, max_results=100):
 
     if isinstance(video_ids, str):
         video_ids = [video_ids]
@@ -101,27 +101,32 @@ def get_video_comments(youtube, video_ids, max_results=100):
 
 """----------------------------------------------------------------------------------------------------------------------------------------------------"""
 # Get comment threads related to a channel
-def get_channel_comments(youtube, channel_id, max_results=100):
-    all_raw_items = []  # This will hold all comments for the channel
-    try:
-        next_page_token = None
-        while True:
-            response = youtube.commentThreads().list(
-                allThreadsRelatedToChannelId=channel_id,
-                part="snippet",
-                maxResults=max_results,
-                order="time",
-                pageToken = next_page_token
-            ).execute()
+def get_youtube_channel_comments(youtube, channel_ids, max_results=100):
+    if isinstance(channel_ids, str):
+        channel_ids = [channel_ids]
 
-            all_raw_items.extend(response.get("items", [])) # Add the current page of comments to the channel-specific list
-            next_page_token = response.get("nextPageToken") #Update page token
+    all_raw_items = []  # This will hold all comments across all channels
 
-            if not next_page_token: # If there's no next page token, we've reached the end of the results
-                break  
+    for channel_id in channel_ids:
+        try:
+            next_page_token = None
+            while True:
+                response = youtube.commentThreads().list(
+                    allThreadsRelatedToChannelId=channel_id,
+                    part="snippet",
+                    maxResults=max_results,
+                    order="time",
+                    pageToken=next_page_token
+                ).execute()
 
-    except Exception as e:
-        print(f"Could not get comments for channel {channel_id}: {e}")
-        return []  # Return an empty list if there's an error
+                all_raw_items.extend(response.get("items", []))
+                next_page_token = response.get("nextPageToken")
 
-    return all_raw_items 
+                if not next_page_token:
+                    break
+
+        except Exception as e:
+            print(f"Could not get comments for channel {channel_id}: {e}")
+            continue
+
+    return all_raw_items
