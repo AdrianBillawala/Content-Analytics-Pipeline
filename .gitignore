@@ -1,15 +1,13 @@
-# Ignore the data folder entirely
-data/
+# Allowlist mode: ignore everything by default, then allow only selected files.
+*
 
-# Ignore Python cache files
-__pycache__/
-*.py[cod]
+# Keep directories visible so file exceptions below can work.
+!*/
 
-# Ignore environment variables (API Keys)
-.env
-
-# Ignore Jupyter Notebook files
-*.ipynb
-.ipynb_checkpoints/
-anaconda_projects/
-
+# Files allowed to be committed.
+!.gitignore
+!README.md
+!main.py
+!scripts/extract.py
+!scripts/load.py
+!scripts/transform.py
