@@ -1,27 +1,7 @@
 import pandas as pd
 import isodate
-
 """----------------------------------------------------------------------------------------------------------------------------------------------------"""
-def transform_channel_comments(channel_comments):
-    transformed = []
-    #flatten channel comments into a dictionary for easier analysis/saving to CSv
-    for comment in channel_comments:
-        channel_id = comment['snippet']['channelId']
-        comment_id = comment['id']
-        author_display_name = comment['snippet']['topLevelComment']['snippet']['authorDisplayName']
-        author_channel_id = comment['snippet']['topLevelComment']['snippet'].get('authorChannelId', {}).get('value')
-        text_display = comment['snippet']['topLevelComment']['snippet']['textDisplay']
-        like_count = comment['snippet']['topLevelComment']['snippet']['likeCount']
-        published_at = comment['snippet']['topLevelComment']['snippet']['publishedAt']
-        transformed.append((channel_id, comment_id, author_display_name, author_channel_id, text_display, like_count, published_at))
-    
-    # Create a DataFrame from the transformed list of tuples
-    df = pd.DataFrame(transformed, columns=['channel_id', 'comment_id', 'author_display_name', 'author_channel_id', 'text_display', 'like_count', 'published_at'])
-    
-    return df
-
-"""----------------------------------------------------------------------------------------------------------------------------------------------------"""
-def transform_youtube_video_comments(video_comments):
+def transform_youtube_comments(video_comments):
     transformed = []
     #flatten video comments into a dictionary for easier analysis/saving to CSV
     for comment in video_comments:
@@ -248,5 +228,77 @@ def transform_youtube_search_results(search_results):
         df[col] = df[col].fillna('').str.strip()
 
     return df.reset_index(drop=True)
+
+
+"""----------------------------------------------------------------------------------------------------------------------------------------------------"""
+def _validation_summary(df, required_cols, unique_col=None):
+    """Return a compact quality summary for a transformed DataFrame.
+
+    Notes:
+    - row_count: number of rows produced by the transform.
+    - missing_required_columns: expected columns that are absent.
+    - null_unique_col: null count for the primary ID column (if provided).
+    - duplicate_unique_col: duplicate count for the primary ID column (if provided).
+    """
+    summary = {
+        'row_count': len(df),
+        'missing_required_columns': [col for col in required_cols if col not in df.columns],
+    }
+
+    if unique_col and unique_col in df.columns:
+        summary['null_unique_col'] = int(df[unique_col].isna().sum())
+        summary['duplicate_unique_col'] = int(df[unique_col].duplicated().sum())
+
+    return summary
+
+
+def validate_youtube_comments_df(df):
+    """Validate transformed YouTube comment output.
+
+    Expected shape:
+    - One row per top-level comment.
+    - comment_id should be the unique key.
+    - Core fields needed for comment analysis must exist.
+    """
+    required_cols = [
+        'video_id', 'comment_id', 'author_display_name',
+        'text_display', 'like_count', 'published_at'
+    ]
+    return _validation_summary(df, required_cols, unique_col='comment_id')
+
+
+def validate_youtube_video_details_df(df):
+    """Validate transformed YouTube video details output.
+
+    Expected shape:
+    - One row per video.
+    - video_id should be the unique key.
+    - Engagement and duration fields should be present for KPI calculations.
+    """
+    required_cols = [
+        'video_id', 'published_date', 'channel_id', 'title',
+        'view_count', 'like_count', 'comment_count', 'duration_seconds'
+    ]
+    return _validation_summary(df, required_cols, unique_col='video_id')
+
+
+def validate_youtube_search_results_df(df, search_type='video'):
+    """Validate transformed YouTube search output.
+
+    Notes:
+    - search_type='video' checks video-oriented columns and uniqueness by video_id.
+    - search_type='channel' checks channel-oriented columns and uniqueness by channel_id.
+    """
+    if search_type == 'channel':
+        required_cols = ['channel_id', 'channel_title', 'description', 'published_date']
+        unique_col = 'channel_id'
+    else:
+        required_cols = [
+            'channel_id', 'channel_title', 'video_id',
+            'video_title', 'description', 'published_date'
+        ]
+        unique_col = 'video_id'
+
+    return _validation_summary(df, required_cols, unique_col=unique_col)
 
 
