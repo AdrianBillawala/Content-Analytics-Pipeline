@@ -1,6 +1,6 @@
 import pandas as pd
 import isodate
-"""----------------------------------------------------------------------------------------------------------------------------------------------------"""
+"""----------COMMENT TRANSFORMATION------------------------------------------------------------------------------------------------------------------------------------------"""
 def transform_youtube_comments(video_comments):
     transformed = []
     #flatten video comments into a dictionary for easier analysis/saving to CSV
@@ -31,7 +31,7 @@ def transform_youtube_comments(video_comments):
 
     return df
 
-"""----------------------------------------------------------------------------------------------------------------------------------------------------"""
+"""----------CHANNEL DETAILS TRANSFORMATION------------------------------------------------------------------------------------------------------------------------------------------"""
 def transform_youtube_channel_details(channel_details):
     transformed = []
     #flatten channel details into a dictionary for easier analysis/saving to CSV
@@ -77,7 +77,7 @@ def transform_youtube_channel_details(channel_details):
 
     return df
 
-"""----------------------------------------------------------------------------------------------------------------------------------------------------"""
+"""----------VIDEO DETAILS TRANSFORMATION------------------------------------------------------------------------------------------------------------------------------------------"""
 def transform_youtube_video_details(video_details):
     # Check if video_details is empty or None
     if not video_details:
@@ -152,8 +152,7 @@ def transform_youtube_video_details(video_details):
 
     return df
 
-"""----------------------------------------------------------------------------------------------------------------------------------------------------"""
-
+"""----------YOUTUBE SEARCH RESULTS TRANSFORMATION------------------------------------------------------------------------------------------------------------------------------------------"""
 def transform_youtube_search_results(search_results):
     transformed = []
 
@@ -199,9 +198,6 @@ def transform_youtube_search_results(search_results):
                 snippet.get('publishedAt')
             ))
 
-    # -------------------------
-    # Build DataFrame
-    # -------------------------
     if search_type == 'video':
         df = pd.DataFrame(transformed, columns=[
             'channel_id', 'channel_title', 'video_id',
@@ -230,7 +226,7 @@ def transform_youtube_search_results(search_results):
     return df.reset_index(drop=True)
 
 
-"""----------------------------------------------------------------------------------------------------------------------------------------------------"""
+"""----------VALIDATION------------------------------------------------------------------------------------------------------------------------------------------"""
 def _validation_summary(df, required_cols, unique_col=None):
     """Return a compact quality summary for a transformed DataFrame.
 
